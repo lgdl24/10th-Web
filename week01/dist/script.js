@@ -1,5 +1,6 @@
 "use strict";
 const todoInput = document.getElementById("todo-input");
+const todoDate = document.getElementById("todo-date");
 const todoForm = document.getElementById("todo-form");
 const todoList = document.getElementById("todo-list");
 const doneList = document.getElementById("done-list");
@@ -18,7 +19,7 @@ const renderTasks = () => {
     });
 };
 const getTodoText = () => {
-    return todoInput.value.trim();
+    return todoInput.value.trim() + "\n" + todoDate.value.trim();
 };
 const addTodo = (text) => {
     todos.push({ id: Date.now(), text });

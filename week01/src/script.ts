@@ -1,5 +1,6 @@
 // 1. HTML 요소 선택
 const todoInput = document.getElementById("todo-input") as HTMLInputElement;
+const todoDate = document.getElementById("todo-date") as HTMLInputElement;
 const todoForm = document.getElementById("todo-form") as HTMLFormElement;
 const todoList = document.getElementById("todo-list") as HTMLUListElement;
 const doneList = document.getElementById("done-list") as HTMLUListElement;
@@ -31,7 +32,7 @@ const renderTasks = (): void => {
 
 // 3. 할일 텍스트 입력 처리 함수
 const getTodoText = (): string => {
-  return todoInput.value.trim();
+  return todoInput.value.trim() + "\n" + todoDate.value.trim();
 };
 // 4. 할일 추가 처리 함수
 const addTodo = (text: string): void => {

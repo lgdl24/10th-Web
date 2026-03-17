@@ -18,7 +18,7 @@ body {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  width: 350px;
+  width: 500px;
   text-align: center;
 }
 
@@ -32,12 +32,21 @@ body {
   gap: 10px;
   margin-bottom: 20px;
 }
+
 .todo-container__input {
   flex: 1;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
+}
+
+.todo-container__date {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 12px;
 }
 
 .todo-container__button {
@@ -87,7 +96,8 @@ body {
   background-color: #f9f9f9;
   border-radius: 6px;
   margin-bottom: 6px;
-  width: 100px;
+  width: auto;
+  white-space: pre-line;
 }
 
 .render-container__item__text {
