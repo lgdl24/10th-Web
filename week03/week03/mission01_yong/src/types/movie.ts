@@ -52,32 +52,17 @@ export type MovieDetails = {
 };
 
 export type Cast = {
-  adult: boolean;
-  gender: number | null;
   id: number;
-  known_for_department: string; // "Acting"
   name: string;
   original_name: string;
-  popularity: number;
   profile_path: string | null;
-  cast_id: number;
-  character: string; // 배역 이름
-  credit_id: string;
-  order: number;
 };
 
 export type Crew = {
-  adult: boolean;
-  gender: number | null;
   id: number;
-  known_for_department: string; // "Directing", "Writing" 등
   name: string;
   original_name: string;
-  popularity: number;
   profile_path: string | null;
-  credit_id: string;
-  department: string; // "Directing"
-  job: string; //  "Director", "Writer"
 };
 
 export type CreditsResponse = {

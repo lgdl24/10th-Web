@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { MovieDetails, CreditsResponse } from "../types/movie";
 import axios from "axios";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 export default function MovieDetailPage() {
   const [movieDetails, setMovieDetails] = useState<MovieDetails>();
@@ -15,28 +16,33 @@ export default function MovieDetailPage() {
   //https://api.themoviedb.org/3/movie/{movie_id}
   useEffect(() => {
     const getMovieDetails = async (): Promise<void> => {
-      const { data } = await axios.get<MovieDetails>(
-        `https://api.themoviedb.org/3/movie/${movie_id}?language=ko-US`,
-        {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_TMDB_KEY}`,
+      setIsPending(true);
+      try {
+        const { data } = await axios.get<MovieDetails>(
+          `https://api.themoviedb.org/3/movie/${movie_id}?language=ko-US`,
+          {
+            headers: {
+              Authorization: `Bearer ${import.meta.env.VITE_TMDB_KEY}`,
+            },
           },
-        },
-      );
-      //console.log(data.data);
-      setMovieDetails(data);
-      console.log(data);
+        );
+        //console.log(data.data);
+        setMovieDetails(data);
 
-      const { data: creditData } = await axios.get<CreditsResponse>(
-        `https://api.themoviedb.org/3/movie/${movie_id}/credits?language=ko-US`,
-        {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_TMDB_KEY}`,
+        const { data: creditData } = await axios.get<CreditsResponse>(
+          `https://api.themoviedb.org/3/movie/${movie_id}/credits?language=ko-US`,
+          {
+            headers: {
+              Authorization: `Bearer ${import.meta.env.VITE_TMDB_KEY}`,
+            },
           },
-        },
-      );
-      setCredits(creditData);
-      console.log(creditData);
+        );
+        setCredits(creditData);
+      } catch {
+        setIsError(true);
+      } finally {
+        setIsPending(false);
+      }
     };
     getMovieDetails();
   }, [movie_id]);
@@ -45,8 +51,21 @@ export default function MovieDetailPage() {
       index === self.findIndex((p) => p.id === person.id),
   );
 
+  if (isError) {
+    return (
+      <div>
+        <span className="text-red-500 text-2xl">요청에 실패하였습니다.</span>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-black/95">
+      {isPending && (
+        <div className="flex items-center justify-center h-dvh">
+          <LoadingSpinner />
+        </div>
+      )}
       <div className="relative mb-4">
         <img
           src={`https://image.tmdb.org/t/p/original${movieDetails?.backdrop_path}`}
@@ -70,34 +89,40 @@ export default function MovieDetailPage() {
           </p>
         </div>
       </div>
-      <h2 className="text-5xl font-bold text-white px-5 mt-10">출연진</h2>
+      <h2 className="text-5xl font-bold text-white px-10 mt-10">출연진</h2>
       <div className="p-10 gap-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {credits?.cast.map((actor) => (
-          <div key={actor.id}>
+          <div
+            key={actor.id}
+            className="flex flex-col items-center justify-center text-center transition duration-300 hover:-translate-y-1"
+          >
             <img
               src={
                 actor.profile_path
                   ? `https://image.tmdb.org/t/p/w200${actor.profile_path}`
                   : "/default-profile.png"
               }
-              className="w-40 h-40 object-cover rounded-full border-2 border-white"
+              className="mb-2 w-40 h-40 object-cover rounded-full border-2 border-white transition duration-300 hover:scale-110 hover:shadow-lg hover:border-blue-400 hover:border-[4px]"
             />
-            <div className="text-white">{actor.name}</div>
+            <div className=" text-white">{actor.name}</div>
             <div className="text-gray-600">{actor.original_name}</div>
           </div>
         ))}
       </div>
-      <h2 className="text-5xl font-bold text-white">제작진</h2>
+      <h2 className="text-5xl font-bold text-white px-10 mt-10">제작진</h2>
       <div className="p-10 gap-4 grid grid-cols-6">
         {uniqueCrew?.map((producer) => (
-          <div key={producer.id}>
+          <div
+            key={producer.id}
+            className="flex flex-col items-center justify-center text-center transition duration-300 hover:-translate-y-1"
+          >
             <img
               src={
                 producer.profile_path
                   ? `https://image.tmdb.org/t/p/w200${producer.profile_path}`
                   : "/default-profile.png"
               }
-              className="w-40 h-40 object-cover rounded-full border-2 border-white"
+              className="mb-2 w-40 h-40 object-cover rounded-full border-2 border-white transition duration-300 hover:scale-110 hover:shadow-lg hover:border-blue-400 hover:border-[4px]"
             />
             <div className="text-white">{producer.name}</div>
             <div className="text-gray-600">{producer.original_name}</div>

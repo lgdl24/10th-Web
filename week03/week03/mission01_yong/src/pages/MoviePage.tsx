@@ -31,7 +31,6 @@ export default function MoviePage() {
             },
           },
         );
-        console.log(data);
         setMovies(data.results);
         setIsPending(false);
       } catch {
