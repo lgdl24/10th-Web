@@ -5,8 +5,6 @@ import axios from "axios";
 const MoviesPage = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
 
-  console.log(movies);
-
   useEffect(() => {
     const fetchMovies = async () => {
       const { data } = await axios.get<MovieResponse>(
@@ -23,26 +21,11 @@ const MoviesPage = () => {
   }, []);
 
   return (
-    <ul
-      style={{
-        listStyle: "none",
-        padding: 0,
-        display: "grid",
-        gridTemplateColumns: "repeat(6, 1fr)",
-        gap: "8px",
-      }}
-    >
+    <ul>
       {movies?.map((movie) => (
         <li key={movie.id}>
-          {/*  
           <h2>{movie.title}</h2>
-          <p>{movie.release_date}</p> 
-          */}
-          <img
-            src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-            alt={movie.title}
-            style={{ width: "100%", borderRadius: "8px", height: "100%" }}
-          />
+          <p>{movie.release_date}</p>
         </li>
       ))}
     </ul>

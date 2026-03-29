@@ -14,7 +14,7 @@ const SearchPage = () => {
     window.addEventListener("click", mouseClickEffectEvent);
 
     return () => {
-      console.log("클린업 함수 실행", counter);
+      console.log("크ㄹ린업 함수 실행", counter);
       window.removeEventListener("click", mouseClickEffectEvent);
     };
   }, [counter]);
