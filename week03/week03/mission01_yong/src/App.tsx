@@ -7,16 +7,16 @@ import MovieDetailPage from "./pages/MovieDetailPage";
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: "movies",
     element: <HomePage />, // 여기서 자식을 내려줄 때 outlet 처리를 해줘야함
     errorElement: <NotFoundPage />,
     children: [
       {
-        path: "movies/:category",
+        path: "category/:category",
         element: <MoviePage />,
       },
       {
-        path: "movies/:movieId",
+        path: ":movie_id",
         element: <MovieDetailPage />,
       },
     ],

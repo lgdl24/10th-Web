@@ -50,3 +50,23 @@ export type MovieDetails = {
   vote_average: number;
   vote_count: number;
 };
+
+export type Cast = {
+  id: number;
+  name: string;
+  original_name: string;
+  profile_path: string | null;
+};
+
+export type Crew = {
+  id: number;
+  name: string;
+  original_name: string;
+  profile_path: string | null;
+};
+
+export type CreditsResponse = {
+  id: number;
+  cast: Cast[];
+  crew: Crew[];
+};

@@ -1,21 +1,21 @@
 import { NavLink } from "react-router-dom";
 
 const LINKS = [
-  { to: "/", label: "홈" },
+  { to: "/movies", label: "홈" },
   {
-    to: "/movies/popular",
+    to: "/movies/category/popular",
     label: "인기 영화",
   },
   {
-    to: "/movies/upcoming",
+    to: "/movies/category/upcoming",
     label: "개봉 예정",
   },
   {
-    to: "/movies/top_rated",
+    to: "/movies/category/top_rated",
     label: "평점 높은",
   },
   {
-    to: "/movies/now_playing",
+    to: "/movies/category/now_playing",
     label: "상영 중",
   },
 ];

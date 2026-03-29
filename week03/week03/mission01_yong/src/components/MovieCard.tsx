@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Movie } from "../types/movie";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 interface MovieCardProps {
   movie: Movie;
