@@ -77,7 +77,7 @@ export type Crew = {
   profile_path: string | null;
   credit_id: string;
   department: string; // "Directing"
-  job: string; // ⭐ "Director", "Writer"
+  job: string; //  "Director", "Writer"
 };
 
 export type CreditsResponse = {
