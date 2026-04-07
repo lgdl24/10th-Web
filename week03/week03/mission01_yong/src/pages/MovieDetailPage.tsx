@@ -1,51 +1,46 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useParams } from "react-router-dom";
 import type { MovieDetails, CreditsResponse } from "../types/movie";
-import axios from "axios";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { useCustomFetch } from "../hooks/useCustomFetch";
 
 export default function MovieDetailPage() {
-  const [movieDetails, setMovieDetails] = useState<MovieDetails>();
-  const [credits, setCredits] = useState<CreditsResponse>();
   const { movie_id } = useParams();
 
-  // 1. 로딩 상태
-  const [isPending, setIsPending] = useState(false);
-  // 2. 에러 상태
-  const [isError, setIsError] = useState(false);
-  //https://api.themoviedb.org/3/movie/{movie_id}
-  useEffect(() => {
-    const getMovieDetails = async (): Promise<void> => {
-      setIsPending(true);
-      try {
-        const { data } = await axios.get<MovieDetails>(
-          `https://api.themoviedb.org/3/movie/${movie_id}?language=ko-US`,
-          {
-            headers: {
-              Authorization: `Bearer ${import.meta.env.VITE_TMDB_KEY}`,
-            },
-          },
-        );
-        //console.log(data.data);
-        setMovieDetails(data);
+  const requestConfig = useMemo(
+    () => ({
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_TMDB_KEY}`,
+      },
+    }),
+    [],
+  );
 
-        const { data: creditData } = await axios.get<CreditsResponse>(
-          `https://api.themoviedb.org/3/movie/${movie_id}/credits?language=ko-US`,
-          {
-            headers: {
-              Authorization: `Bearer ${import.meta.env.VITE_TMDB_KEY}`,
-            },
-          },
-        );
-        setCredits(creditData);
-      } catch {
-        setIsError(true);
-      } finally {
-        setIsPending(false);
-      }
-    };
-    getMovieDetails();
-  }, [movie_id]);
+  const {
+    data: movieDetails,
+    loading: movieLoading,
+    error: movieError,
+  } = useCustomFetch<MovieDetails>(
+    movie_id
+      ? `https://api.themoviedb.org/3/movie/${movie_id}?language=ko-US`
+      : "",
+    requestConfig,
+  );
+
+  const {
+    data: credits,
+    loading: creditsLoading,
+    error: creditsError,
+  } = useCustomFetch<CreditsResponse>(
+    movie_id
+      ? `https://api.themoviedb.org/3/movie/${movie_id}/credits?language=ko-US`
+      : "",
+    requestConfig,
+  );
+
+  const isPending = movieLoading || creditsLoading;
+  const isError = movieError || creditsError;
+
   const uniqueCrew = credits?.crew.filter(
     (person, index, self) =>
       index === self.findIndex((p) => p.id === person.id),
@@ -59,21 +54,25 @@ export default function MovieDetailPage() {
     );
   }
 
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center h-dvh bg-black/95">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-black/95">
-      {isPending && (
-        <div className="flex items-center justify-center h-dvh">
-          <LoadingSpinner />
-        </div>
-      )}
       <div className="relative mb-4">
         <img
           src={`https://image.tmdb.org/t/p/original${movieDetails?.backdrop_path}`}
           alt={`${movieDetails?.title} 영화의 이미지`}
-          className="w-full h-[600px] object-cover "
+          className="w-full h-[600px] object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-transparent" />
-        <div className="absolute inset-0 p-6 text-white ">
+
+        <div className="absolute inset-0 p-6 text-white">
           <h1 className="mb-2 text-3xl font-bold">{movieDetails?.title}</h1>
 
           <p>⭐ {movieDetails?.vote_average}점</p>
@@ -89,6 +88,7 @@ export default function MovieDetailPage() {
           </p>
         </div>
       </div>
+
       <h2 className="text-5xl font-bold text-white px-10 mt-10">출연진</h2>
       <div className="p-10 gap-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {credits?.cast.map((actor) => (
@@ -104,11 +104,12 @@ export default function MovieDetailPage() {
               }
               className="mb-2 w-40 h-40 object-cover rounded-full border-2 border-white transition duration-300 hover:scale-110 hover:shadow-lg hover:border-blue-400 hover:border-[4px]"
             />
-            <div className=" text-white">{actor.name}</div>
+            <div className="text-white">{actor.name}</div>
             <div className="text-gray-600">{actor.original_name}</div>
           </div>
         ))}
       </div>
+
       <h2 className="text-5xl font-bold text-white px-10 mt-10">제작진</h2>
       <div className="p-10 gap-4 grid grid-cols-6">
         {uniqueCrew?.map((producer) => (
