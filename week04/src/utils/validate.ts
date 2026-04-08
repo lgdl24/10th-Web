@@ -1,25 +1,26 @@
-export type UserSigininInformation = {
+export type UserSigninInformation = {
   email: string;
   password: string;
 };
 
-function validateUser(values: UserSigininInformation) {
-  const errors = {
+const validate = (value: UserSigninInformation) => {
+  const error = {
     email: "",
     password: "",
   };
 
-  if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)) {
-    errors.email = "이메일 형식이 올바르지 않습니다.";
+  if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value.email)) {
+    error.email = "이메일 형식이 잘못되었습니다.";
   }
-  if (values.password.length < 8 || values.password.length > 20) {
-    errors.password = "비밀번호는 8자 이상 20자 이하여야 합니다.";
+  if (value.password.length < 8 || value.password.length > 20) {
+    error.password = "비밀번호는 8자 이상 20자 이하입니다.";
   }
-  return errors;
-}
 
-function validateSignin(values: UserSigininInformation) {
-  return validateUser(values);
+  return error;
+};
+
+function validateSignin(value: UserSigninInformation) {
+  return validate(value);
 }
 
 export { validateSignin };
