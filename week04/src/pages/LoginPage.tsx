@@ -1,7 +1,11 @@
+import { postSignin } from "../apis/auth";
 import useForm from "../hooks/useForm";
 import { validateSignin, type UserSigininInformation } from "../utils/validate";
+import { useLocalStorage } from "../hooks/useLocalStorage";
+import { LOCAL_STORAGE_KEY } from "../constants/key";
 
 const LoginPage = () => {
+  const { setItem } = useLocalStorage(LOCAL_STORAGE_KEY.accessToken);
   const { values, error, touched, getInputProps } =
     useForm<UserSigininInformation>({
       initailValue: {
@@ -11,8 +15,15 @@ const LoginPage = () => {
       validate: validateSignin,
     });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     console.log(values);
+    try {
+      const response = await postSignin(values);
+      setItem(response.data.accessToken);
+      console.log(response);
+    } catch (error) {
+      console.error("로그인 실패:", error);
+    }
   };
 
   const isDisabled =
