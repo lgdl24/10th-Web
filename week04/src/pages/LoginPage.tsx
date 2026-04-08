@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import useForm from "../hooks/useForm";
 import { validateSignin, type UserSigninInformation } from "../utils/validate";
 
@@ -20,13 +21,18 @@ export default function LoginPage() {
     Object.values(error || {}).some((error: string) => error.length > 0) ||
     Object.values(values).some((value) => value === "");
 
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col items-center justify-center h-dvh">
       <div className="flex flex-col gap-4 border border-gray-300 rounded-xl p-10 w-96">
         <div className="relative flex items-center justify-center">
-          <h1 className="absolute left-0 font-bold text-2xl text-gray-500">
+          <button
+            className="absolute left-0 font-bold text-2xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+            onClick={() => navigate(-1)}
+          >
             {"<"}
-          </h1>
+          </button>
           <h1 className="font-bold text-4xl text-gray-500">Login</h1>
         </div>
         <input
