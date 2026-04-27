@@ -2,7 +2,7 @@ import z from "zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { postSignup } from "../apis/auth";
-import axiosInstance from "../apis/axios";
+import { axiosInstance } from "../apis/axios";
 
 const schema = z
   .object({

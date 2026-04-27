@@ -5,7 +5,7 @@ import type {
   ResponseSignupDto,
   ResponseSigninDto,
 } from "../types/auth";
-import axiosInstance from "./axios";
+import { axiosInstance } from "./axios";
 
 export const postSignup = async (
   body: RequestSignupDto,
