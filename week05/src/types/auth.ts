@@ -15,8 +15,8 @@ export type ResponseSignupDto = CommonResponse<{
   email: string;
   bio: string | null;
   avatar: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }>;
 
 // 로그인

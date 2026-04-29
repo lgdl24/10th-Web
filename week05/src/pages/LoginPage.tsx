@@ -42,11 +42,11 @@ const LoginPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4">
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 w-[300px]">
         <input
           {...getInputProps("email")}
           name="email"
-          className={`border border-[#ccc] w-[300px] p-[10px] focus:border-[#807bff] rounded-sm ${
+          className={`border border-[#ccc] w-full p-[10px] focus:border-[#807bff] rounded-sm ${
             error.email && touched.email
               ? "border-red-500 bg-red-200"
               : "border-gray-300"
@@ -59,7 +59,7 @@ const LoginPage = () => {
         )}
         <input
           {...getInputProps("password")}
-          className={`border border-[#ccc] w-[300px] p-[10px] focus:border-[#807bff] rounded-sm ${
+          className={`border border-[#ccc] w-full p-[10px] focus:border-[#807bff] rounded-sm ${
             error.password && touched.password
               ? "border-red-500 bg-red-200"
               : "border-gray-300"
@@ -78,17 +78,23 @@ const LoginPage = () => {
         >
           로그인
         </button>
+        {/*
+        <div className="flex items-center justify-center gap-4 w-full">
+          <img
+            onClick={handleGoogleLogin}
+            src={"/images/googleLogo2x.png"}
+            alt="Google Logo"
+            className="w-full object-contain cursor-pointer"
+          />
+        </div>
+         */}
 
         <button
-          type="button"
           onClick={handleGoogleLogin}
-          //disabled={isDisabled}
-          className="w-full bg-blue-600 text-white py-3 rounded-md text-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer disabled:bg-gray-400"
+          className="w-full flex items-center justify-center gap-2 border border-gray-300 py-3 rounded-md bg-white hover:bg-gray-50"
         >
-          <div className="flex items-center justify-center gap-4">
-            <img src={"/images/googleLogo.png"} alt="Google Logo image" />
-            <span>Google Login</span>
-          </div>
+          <img src="/images/googleRoundLogo2x.png" className="w-5 h-5" />
+          <span>Google로 시작하기</span>
         </button>
       </div>
     </div>
