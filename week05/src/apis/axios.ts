@@ -11,14 +11,12 @@ let refreshPromise: Promise<string> | null = null;
 
 export const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_SERVER_API_URL,
-  headers: {
-    Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-  },
 });
 
 axiosInstance.interceptors.request.use(
   (config) => {
     const { getItem } = useLocalStorage(LOCAL_STORAGE_KEY.accessToken);
+
     const accessToken = getItem();
     if (accessToken) {
       config.headers = config.headers || {};

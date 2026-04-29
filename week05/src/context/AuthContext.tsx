@@ -56,7 +56,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
         setAccessTokenInStorage(newAccessToken);
         setRefreshTokenInStorage(newRefreshToken);
-        alert("로그인 성공!");
         window.location.href = "/my";
       }
     } catch (error) {

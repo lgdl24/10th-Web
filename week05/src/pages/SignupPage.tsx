@@ -2,7 +2,7 @@ import z from "zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { postSignup } from "../apis/auth";
-import { axiosInstance } from "../apis/axios";
+import { useNavigate } from "react-router-dom";
 
 const schema = z
   .object({
@@ -25,6 +25,8 @@ const schema = z
 type FormFilds = z.infer<typeof schema>;
 
 const SignupPage = () => {
+  const navigate = useNavigate();
+
   const {
     register,
     handleSubmit,
@@ -40,17 +42,18 @@ const SignupPage = () => {
   });
 
   const onSubmit: SubmitHandler<FormFilds> = async (data) => {
-    console.log("env:", import.meta.env.VITE_SERVER_API_URL);
-    console.log("baseURL:", axiosInstance.defaults.baseURL);
-    console.log(data);
-    const { passwordCheck, ...rest } = data;
-    const response = await postSignup(rest);
+    const { ...rest } = data;
 
-    console.log(response);
+    try {
+      await postSignup(rest);
+      navigate("/signup/complete");
+    } catch (error) {
+      console.log("회원가입 요청 오류", error);
+    }
   };
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4">
-      <div className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3">
         <input
           {...register("email")}
           name="email"
@@ -103,14 +106,13 @@ const SignupPage = () => {
           <div className="text-red-500 text-sm">{errors.name.message}</div>
         )}
         <button
-          type="button"
-          onClick={handleSubmit(onSubmit)}
+          type="submit"
           disabled={isSubmitting}
           className="w-full bg-blue-600 text-white py-3 rounded-md text-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer disabled:bg-gray-400"
         >
           회원가입
         </button>
-      </div>
+      </form>
     </div>
   );
 };

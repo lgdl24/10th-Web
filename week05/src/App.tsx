@@ -8,6 +8,9 @@ import SignupPage from "./pages/SignupPage";
 import MyPage from "./pages/MyPage";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedLayout from "./layouts/ProtectedLayout";
+import GoogleLoginRedirectPage from "./pages/GoogleLoginRedirectPage";
+import SignupCompletePage from "./pages/SignupCompletePage";
+import { Children } from "react";
 
 // 1. 홈페이지
 // 2. 로그인 페이지
@@ -25,6 +28,8 @@ const publicRoutes = [
       },
       { path: "login", element: <LoginPage /> },
       { path: "signup", element: <SignupPage /> },
+      { path: "signup/complete", element: <SignupCompletePage /> },
+      { path: "v1/auth/google/callback", element: <GoogleLoginRedirectPage /> },
     ],
   },
 ];
@@ -37,8 +42,8 @@ const protectedRoutes = [
     errorElement: <NotFoundPage />,
     children: [
       {
-        path: "my",
-        element: <MyPage />,
+        element: <HomeLayout />,
+        children: [{ path: "my", element: <MyPage /> }],
       },
     ],
   },
