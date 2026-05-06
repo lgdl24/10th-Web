@@ -1,33 +1,42 @@
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import useForm from "../hooks/useForm";
 import { validateSignin, type UserSigininInformation } from "../utils/validate";
 import { useAuth } from "../context/AuthContext";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+
+interface LocationState {
+  from?: string;
+}
+
+const inputBase =
+  "border w-full p-[10px] rounded-sm bg-zinc-800 text-white placeholder-zinc-500 focus:outline-none focus:border-[#807bff]";
 
 const LoginPage = () => {
   const { login, accessToken } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // 이미 로그인된 상태라면 홈으로
   useEffect(() => {
     if (accessToken) {
-      navigate("/");
+      navigate("/", { replace: true });
     }
-  });
+  }, [accessToken, navigate]);
 
-  //const { setItem } = useLocalStorage(LOCAL_STORAGE_KEY.accessToken);
   const { values, error, touched, getInputProps } =
     useForm<UserSigininInformation>({
-      initailValue: {
-        email: "",
-        password: "",
-      },
+      initailValue: { email: "", password: "" },
       validate: validateSignin,
     });
 
   const handleSubmit = async () => {
-    try {
-      await login(values);
-    } catch (error) {
-      console.log(error);
+    const success = await login(values);
+
+    if (success) {
+      const state = location.state as LocationState;
+      navigate(state?.from ?? "/", { replace: true });
+    } else {
+      alert("로그인에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -37,8 +46,8 @@ const LoginPage = () => {
   };
 
   const isDisabled =
-    Object.values(error || {}).some((error: string) => error.length > 0) ||
-    Object.values(values).some((value) => value === "");
+    Object.values(error || {}).some((e: string) => e.length > 0) ||
+    Object.values(values).some((v) => v === "");
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -46,52 +55,45 @@ const LoginPage = () => {
         <input
           {...getInputProps("email")}
           name="email"
-          className={`border border-[#ccc] w-full p-[10px] focus:border-[#807bff] rounded-sm ${
+          type="email"
+          placeholder="이메일"
+          className={`${inputBase} ${
             error.email && touched.email
-              ? "border-red-500 bg-red-200"
-              : "border-gray-300"
+              ? "border-red-500 bg-red-950"
+              : "border-zinc-600"
           }`}
-          type={"email"}
-          placeholder={"이메일"}
         />
         {error.email && touched.email && (
-          <div className="text-red-500 text-sm">{error.email}</div>
+          <p className="text-red-400 text-sm">{error.email}</p>
         )}
+
         <input
           {...getInputProps("password")}
-          className={`border border-[#ccc] w-full p-[10px] focus:border-[#807bff] rounded-sm ${
+          type="password"
+          placeholder="비밀번호"
+          className={`${inputBase} ${
             error.password && touched.password
-              ? "border-red-500 bg-red-200"
-              : "border-gray-300"
+              ? "border-red-500 bg-red-950"
+              : "border-zinc-600"
           }`}
-          type={"password"}
-          placeholder={"비밀번호"}
         />
         {error.password && touched.password && (
-          <div className="text-red-500 text-sm">{error.password}</div>
+          <p className="text-red-400 text-sm">{error.password}</p>
         )}
+
         <button
           type="button"
           onClick={handleSubmit}
           disabled={isDisabled}
-          className="w-full bg-blue-600 text-white py-3 rounded-md text-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer disabled:bg-gray-400"
+          className="w-full bg-blue-600 text-white py-3 rounded-md text-lg font-medium hover:bg-blue-500 transition-colors cursor-pointer disabled:bg-zinc-700 disabled:text-zinc-500"
         >
           로그인
         </button>
-        {/*
-        <div className="flex items-center justify-center gap-4 w-full">
-          <img
-            onClick={handleGoogleLogin}
-            src={"/images/googleLogo2x.png"}
-            alt="Google Logo"
-            className="w-full object-contain cursor-pointer"
-          />
-        </div>
-         */}
 
+        {/* Google 버튼은 흰 배경 유지 (브랜드 가이드라인) */}
         <button
           onClick={handleGoogleLogin}
-          className="w-full flex items-center justify-center gap-2 border border-gray-300 py-3 rounded-md bg-white hover:bg-gray-50"
+          className="w-full flex items-center justify-center gap-2 border border-zinc-600 py-3 rounded-md bg-white text-gray-700 hover:bg-gray-50 transition"
         >
           <img src="/images/googleRoundLogo2x.png" className="w-5 h-5" />
           <span>Google로 시작하기</span>

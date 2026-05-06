@@ -12,15 +12,21 @@ import { postLogout, postSignin } from "../apis/auth";
 interface AuthContextType {
   accessToken: string | null;
   refreshToken: string | null;
+  name: string | null;
 
-  login: (signInData: RequestSigninDto) => Promise<void>;
+  /**
+   * 로그인 성공 시 true, 실패 시 false 반환.
+   * 페이지 이동은 호출한 쪽(LoginPage)에서 담당합니다.
+   */
+  login: (signInData: RequestSigninDto) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   accessToken: null,
   refreshToken: null,
-  login: async () => {},
+  name: null,
+  login: async () => false,
   logout: async () => {},
 });
 
@@ -35,6 +41,11 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     setItem: setRefreshTokenInStorage,
     removeItem: removeRefreshTokenFromStorage,
   } = useLocalStorage(LOCAL_STORAGE_KEY.refreshToken);
+  const {
+    getItem: getNameFromStorage,
+    setItem: setNameInStorage,
+    removeItem: removeNameFromStorage,
+  } = useLocalStorage(LOCAL_STORAGE_KEY.name);
 
   const [accessToken, setAccessToken] = useState<string | null>(
     getAccessTokenFromStorage(),
@@ -42,27 +53,28 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [refreshToken, setRefreshToken] = useState<string | null>(
     getRefreshTokenFromStorage(),
   );
+  const [name, setName] = useState<string | null>(getNameFromStorage());
 
-  const login = async (signinData: RequestSigninDto) => {
+  /** 성공 true / 실패 false 반환 — 이동 로직은 LoginPage 담당 */
+  const login = async (signinData: RequestSigninDto): Promise<boolean> => {
     try {
       const { data } = await postSignin(signinData);
 
       if (data) {
-        const newAccessToken = data.accessToken;
-        const newRefreshToken = data.refreshToken;
+        setAccessToken(data.accessToken);
+        setRefreshToken(data.refreshToken);
+        setName(data.name);
 
-        setAccessToken(newAccessToken);
-        setRefreshToken(newRefreshToken);
+        setAccessTokenInStorage(data.accessToken);
+        setRefreshTokenInStorage(data.refreshToken);
+        setNameInStorage(data.name);
 
-        setAccessTokenInStorage(newAccessToken);
-        setRefreshTokenInStorage(newRefreshToken);
-        window.location.href = "/my";
+        return true;
       }
+      return false;
     } catch (error) {
-      alert("로그인에 실패했습니다. 다시 시도해주세요.");
-
       console.error("Login failed:", error);
-      window.location.href = "/login";
+      return false;
     }
   };
 
@@ -72,9 +84,12 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
       removeAccessTokenFromStorage();
       removeRefreshTokenFromStorage();
+      removeNameFromStorage();
 
       setAccessToken(null);
       setRefreshToken(null);
+      setName(null);
+
       alert("로그아웃 되었습니다.");
     } catch (error) {
       console.error("Logout failed:", error);
@@ -83,7 +98,9 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   };
 
   return (
-    <AuthContext.Provider value={{ accessToken, refreshToken, login, logout }}>
+    <AuthContext.Provider
+      value={{ accessToken, refreshToken, name, login, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

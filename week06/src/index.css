@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+@layer base {
+  body {
+    color: #f3f4f6; /* gray-100 — 다크 배경 위 기본 텍스트 */
+    background-color: #09090b; /* zinc-950 */
+  }
+}

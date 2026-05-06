@@ -24,3 +24,10 @@ dist-ssr
 *.sw?
 
 .env
+.env*.local
+
+# Claude context and project files
+CLAUDE.md
+.claude.md
+*.claude.md
+.claude/

@@ -10,45 +10,31 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedLayout from "./layouts/ProtectedLayout";
 import GoogleLoginRedirectPage from "./pages/GoogleLoginRedirectPage";
 import SignupCompletePage from "./pages/SignupCompletePage";
-import { Children } from "react";
+import LpDetailPage from "./pages/LpDetailPage";
 
-// 1. 홈페이지
-// 2. 로그인 페이지
-// 3. 회원가입 페이지
-// publicRoutes 인증 필요 X
-const publicRoutes = [
+const router = createBrowserRouter([
   {
     path: "/",
     element: <HomeLayout />,
     errorElement: <NotFoundPage />,
     children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
+      { index: true, element: <HomePage /> },
       { path: "login", element: <LoginPage /> },
       { path: "signup", element: <SignupPage /> },
       { path: "signup/complete", element: <SignupCompletePage /> },
       { path: "v1/auth/google/callback", element: <GoogleLoginRedirectPage /> },
-    ],
-  },
-];
 
-//protectedRoutes 인증 필요
-const protectedRoutes = [
-  {
-    path: "/",
-    element: <ProtectedLayout />,
-    errorElement: <NotFoundPage />,
-    children: [
+      // LP 상세 + /my 모두 인증 필요 → ProtectedLayout 하위로 통합
       {
-        element: <HomeLayout />,
-        children: [{ path: "my", element: <MyPage /> }],
+        element: <ProtectedLayout />,
+        children: [
+          { path: "lp/:lpId", element: <LpDetailPage /> },
+          { path: "my", element: <MyPage /> },
+        ],
       },
     ],
   },
-];
-const router = createBrowserRouter([...publicRoutes, ...protectedRoutes]);
+]);
 
 function App() {
   return (
