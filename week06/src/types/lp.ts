@@ -55,13 +55,39 @@ export type LpDetail = Lp & {
 };
 
 // ────────────────────────────────────────────
+// 댓글
+// ────────────────────────────────────────────
+
+export type CommentAuthor = {
+  id: number;
+  name: string;
+  avatar: string | null;
+};
+
+export type Comment = {
+  id: number;
+  content: string;
+  lpId: number;
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+  user: CommentAuthor;
+};
+
+// ────────────────────────────────────────────
+// 커서 기반 페이지네이션 공통 래퍼
+// ────────────────────────────────────────────
+
+export type CursorPage<T> = {
+  data: T[];
+  nextCursor: number | null;
+  hasNext: boolean;
+};
+
+// ────────────────────────────────────────────
 // API 응답 래퍼 타입
 // ────────────────────────────────────────────
 
-export type LpListResponse = CommonResponse<{
-  data: Lp[];
-  nextCursor: number | null;
-  hasNext: boolean;
-}>;
-
+export type LpListResponse = CommonResponse<CursorPage<Lp>>;
 export type LpDetailResponse = CommonResponse<LpDetail>;
+export type CommentListResponse = CommonResponse<CursorPage<Comment>>;
