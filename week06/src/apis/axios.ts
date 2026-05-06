@@ -84,7 +84,7 @@ axiosInstance.interceptors.response.use(
           // 새 access토큰을 반환하여 다른 요청들이 이것을 사용할 수 있게함
           return data.data.accessToken;
         })()
-          .catch((error) => {
+          .catch((_error) => {
             const { removeItem: removeAccessToken } = useLocalStorage(
               LOCAL_STORAGE_KEY.accessToken,
             );
