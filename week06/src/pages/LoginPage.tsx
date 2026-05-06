@@ -5,7 +5,7 @@ import { validateSignin, type UserSigininInformation } from "../utils/validate";
 import { useAuth } from "../context/AuthContext";
 
 interface LocationState {
-  from?: string;
+  from?: string; // ProtectedLayout이 저장한 원래 경로
 }
 
 const inputBase =
@@ -16,12 +16,14 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 이미 로그인된 상태라면 홈으로
+  // accessToken이 생기면 (이미 로그인 상태 or 방금 로그인 성공)
+  // → from 경로가 있으면 복원, 없으면 홈으로 이동
   useEffect(() => {
     if (accessToken) {
-      navigate("/", { replace: true });
+      const state = location.state as LocationState;
+      navigate(state?.from ?? "/", { replace: true });
     }
-  }, [accessToken, navigate]);
+  }, [accessToken, navigate, location.state]);
 
   const { values, error, touched, getInputProps } =
     useForm<UserSigininInformation>({
@@ -32,10 +34,9 @@ const LoginPage = () => {
   const handleSubmit = async () => {
     const success = await login(values);
 
-    if (success) {
-      const state = location.state as LocationState;
-      navigate(state?.from ?? "/", { replace: true });
-    } else {
+    // 성공 시 navigate는 useEffect(accessToken 변화 감지)가 처리함
+    // — 여기서 직접 navigate하면 useEffect와 레이스 컨디션이 발생해 "/" 로 덮어씌워짐
+    if (!success) {
       alert("로그인에 실패했습니다. 다시 시도해주세요.");
     }
   };
