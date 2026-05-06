@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import type { LpLike } from "../types/lp";
+import { formatDate } from "../utils/date";
 
 interface LpCardProps {
   id: number;
@@ -8,13 +9,6 @@ interface LpCardProps {
   createdAt: string;
   likes: LpLike[];
 }
-
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
 
 const LpCard = ({ id, title, thumbnail, createdAt, likes }: LpCardProps) => {
   const navigate = useNavigate();
