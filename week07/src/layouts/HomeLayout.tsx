@@ -3,7 +3,6 @@ import { Outlet } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
-import FloatingButton from "../components/FloatingButton";
 
 /** Tailwind의 md 브레이크포인트와 동일 */
 const MD_BREAKPOINT = 768;
@@ -36,7 +35,6 @@ const HomeLayout = () => {
       </div>
 
       <Footer />
-      <FloatingButton />
     </div>
   );
 };

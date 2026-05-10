@@ -4,6 +4,7 @@ import { getLps } from "../apis/lp";
 import type { SortOrder } from "../types/lp";
 import LpCard from "../components/LpCard";
 import { useIntersectionObserver } from "../hooks/useIntersectionObserver";
+import FloatingButton from "../components/FloatingButton";
 
 // ── 스켈레톤 ─────────────────────────────────
 
@@ -51,7 +52,9 @@ const HomePage = () => {
     },
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (lastPage) =>
-      lastPage.data?.hasNext ? (lastPage.data.nextCursor ?? undefined) : undefined,
+      lastPage.data?.hasNext
+        ? (lastPage.data.nextCursor ?? undefined)
+        : undefined,
   });
 
   // 모든 페이지의 LP를 하나의 배열로 flatten
@@ -127,6 +130,7 @@ const HomePage = () => {
           <div ref={sentinelRef} className="h-10" aria-hidden="true" />
         </>
       )}
+      <FloatingButton />
     </div>
   );
 };

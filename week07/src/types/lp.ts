@@ -91,3 +91,4 @@ export type CursorPage<T> = {
 export type LpListResponse = CommonResponse<CursorPage<Lp>>;
 export type LpDetailResponse = CommonResponse<LpDetail>;
 export type CommentListResponse = CommonResponse<CursorPage<Comment>>;
+export type LpResponse = CommonResponse<Lp>;

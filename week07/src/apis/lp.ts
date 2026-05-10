@@ -2,7 +2,9 @@ import type {
   CommentListResponse,
   LpDetailResponse,
   LpListResponse,
+  LpResponse,
   SortOrder,
+  Lp,
 } from "../types/lp";
 import { axiosInstance } from "./axios";
 
@@ -40,4 +42,40 @@ export const getComments = async (
     },
   });
   return data;
+};
+/*
+
+
+export const postLp = async (
+  title: string,
+  content: string,
+  tags: string[],
+): Promise<Lp> => {
+  const response = await axiosInstance.post<LpResponse>("/v1/lps", {
+    title,
+    content,
+    tags,
+    published: true,
+  });
+
+  return response.data.data;
+};
+
+*/
+
+export const postLp = async (
+  title: string,
+  content: string,
+  tags: string[],
+  thumbnail?: string,
+): Promise<Lp> => {
+  const response = await axiosInstance.post<LpResponse>("/v1/lps", {
+    title,
+    content,
+    thumbnail,
+    tags,
+    published: true,
+  });
+
+  return response.data.data;
 };
