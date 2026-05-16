@@ -131,3 +131,11 @@ export const patchLp = async (
 export const deleteLp = async (lpId: number): Promise<void> => {
   await axiosInstance.delete(`/v1/lps/${lpId}`);
 };
+
+export const postLike = async (lpId: number): Promise<void> => {
+  await axiosInstance.post(`/v1/lps/${lpId}/likes`);
+};
+
+export const deleteLike = async (lpId: number): Promise<void> => {
+  await axiosInstance.delete(`/v1/lps/${lpId}/likes`);
+};
