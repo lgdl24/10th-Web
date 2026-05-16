@@ -24,6 +24,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   /** 탈퇴 성공 후 로컬 상태만 초기화 (API 호출 없음) */
   clearAuth: () => void;
+  /** 닉네임 낙관적 업데이트용 — NavBar 즉시 반영 */
+  updateName: (newName: string) => void;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -34,6 +36,7 @@ export const AuthContext = createContext<AuthContextType>({
   login: async () => false,
   logout: async () => {},
   clearAuth: () => {},
+  updateName: () => {},
 });
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
@@ -129,6 +132,12 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     setUserId(null);
   };
 
+  /** 닉네임 낙관적 업데이트 — state + localStorage 동시 반영 */
+  const updateName = (newName: string) => {
+    setName(newName);
+    setNameInStorage(newName);
+  };
+
   /** 탈퇴 성공 후 로컬 상태만 초기화 (API 호출 없음) */
   const clearAuth = () => {
     removeAccessTokenFromStorage();
@@ -144,7 +153,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   return (
     <AuthContext.Provider
-      value={{ accessToken, refreshToken, name, userId, login, logout, clearAuth }}
+      value={{ accessToken, refreshToken, name, userId, login, logout, clearAuth, updateName }}
     >
       {children}
     </AuthContext.Provider>

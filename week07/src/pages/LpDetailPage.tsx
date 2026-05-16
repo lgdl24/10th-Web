@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteLp, getLpDetail } from "../apis/lp";
+import { deleteLike, deleteLp, getLpDetail, postLike } from "../apis/lp";
 import { formatDate } from "../utils/date";
 import { useAuth } from "../context/AuthContext";
 import CommentsSection from "../components/CommentsSection";
 import WriteModal from "../components/WriteModal";
 import WarningModal from "../components/WarningModal";
+import type { LpDetailResponse } from "../types/lp";
 
 // ══════════════════════════════════════════════
 // 스켈레톤 컴포넌트 (상세 페이지용)
@@ -98,14 +99,56 @@ const LpDetailPage = () => {
     },
   });
 
+  // ── 좋아요 토글 useMutation (낙관적 업데이트)
+  const likeMutation = useMutation({
+    mutationFn: (isCurrentlyLiked: boolean) =>
+      isCurrentlyLiked ? deleteLike(id) : postLike(id),
+
+    // ✅ onMutate: 서버 응답 전에 캐시를 먼저 업데이트
+    onMutate: async (isCurrentlyLiked) => {
+      // 진행 중인 refetch가 낙관적 업데이트를 덮어쓰지 않도록 취소
+      await queryClient.cancelQueries({ queryKey: ["lp", id] });
+
+      // 롤백용 이전 캐시 저장
+      const previousLp = queryClient.getQueryData<LpDetailResponse>(["lp", id]);
+
+      // ✅ 캐시 즉시 업데이트 (좋아요 추가 or 제거)
+      queryClient.setQueryData<LpDetailResponse>(["lp", id], (old) => {
+        if (!old?.data) return old;
+        const likes = isCurrentlyLiked
+          ? old.data.likes.filter((l) => l.userId !== userId) // 취소: 제거
+          : [
+              ...old.data.likes,
+              { id: Date.now(), userId: userId!, lpId: id }, // 추가: 임시 객체
+            ];
+        return { ...old, data: { ...old.data, likes } };
+      });
+
+      return { previousLp };
+    },
+
+    // ✅ 실패 시 롤백
+    onError: (_err, _vars, context) => {
+      if (context?.previousLp) {
+        queryClient.setQueryData(["lp", id], context.previousLp);
+      }
+    },
+
+    // ✅ 성공/실패 모두 서버 데이터로 최종 동기화
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["lp", id] });
+    },
+  });
+
   if (isPending) return <DetailSkeleton />;
   if (isError) return <DetailError onRetry={refetch} />;
 
   const lp = data?.data;
   if (!lp) return <DetailNotFound onBack={() => navigate("/")} />;
 
-  // 본인이 작성한 LP인지 확인
   const isMyLp = userId !== null && lp.authorId === userId;
+  // 현재 유저가 좋아요를 눌렀는지 확인
+  const isLiked = userId !== null && lp.likes.some((l) => l.userId === userId);
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -145,8 +188,18 @@ const LpDetailPage = () => {
       {/* ── 날짜 + 좋아요 */}
       <div className="flex items-center gap-4 text-sm text-zinc-400 mb-4">
         <span>{formatDate(lp.createdAt)}</span>
-        <button className="flex items-center gap-1 hover:text-red-400 transition">
-          <span>🤍</span>
+
+        {/* ✅ 좋아요 버튼 — 낙관적 업데이트 적용 */}
+        <button
+          onClick={() => likeMutation.mutate(isLiked)}
+          disabled={likeMutation.isPending}
+          className={`flex items-center gap-1 transition ${
+            isLiked
+              ? "text-red-400 hover:text-zinc-400"
+              : "hover:text-red-400"
+          }`}
+        >
+          <span>{isLiked ? "❤️" : "🤍"}</span>
           <span>{lp.likes.length}</span>
         </button>
       </div>
@@ -173,7 +226,7 @@ const LpDetailPage = () => {
       {/* ── 댓글 섹션 */}
       <CommentsSection lpId={id} />
 
-      {/* ── 수정 모달 — WriteModal 수정 모드 재활용 */}
+      {/* ── 수정 모달 */}
       {showEditModal && (
         <WriteModal
           lpId={id}
@@ -187,7 +240,7 @@ const LpDetailPage = () => {
         />
       )}
 
-      {/* ── 삭제 확인 모달 — WarningModal 재활용 */}
+      {/* ── 삭제 확인 모달 */}
       {showDeleteModal && (
         <WarningModal
           message={"LP를 삭제하시겠습니까?\n삭제 후에는 되돌릴 수 없습니다."}

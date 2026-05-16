@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyInfo, patchMyInfo } from "../apis/auth";
-import type { RequestPatchMyInfoDto } from "../types/auth";
+import type { RequestPatchMyInfoDto, ResponseMyInfoDto } from "../types/auth";
+import { useAuth } from "../context/AuthContext";
 
 /**
  * canvas로 이미지를 리사이즈 + 압축한 뒤 base64로 변환합니다.
@@ -14,7 +15,6 @@ const compressImage = (file: File, maxSize = 400, quality = 0.75): Promise<strin
     const objectUrl = URL.createObjectURL(file);
 
     img.onload = () => {
-      // 비율 유지하며 maxSize 이내로 축소
       let { width, height } = img;
       if (width > height) {
         if (width > maxSize) { height = Math.round((height * maxSize) / width); width = maxSize; }
@@ -45,12 +45,12 @@ const MyPage = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [form, setForm] = useState<EditForm>({ name: "", bio: "" });
 
-  // 선택한 파일 + 미리보기 URL (objectURL)
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const { updateName } = useAuth();
 
   // ── 내 정보 조회
   const { data } = useQuery({
@@ -76,19 +76,65 @@ const MyPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImageFile(file);
-    setPreview(URL.createObjectURL(file)); // 즉시 미리보기
+    setPreview(URL.createObjectURL(file));
   };
 
-  // ── 내 정보 수정 useMutation
+  // ── 내 정보 수정 useMutation (닉네임 낙관적 업데이트 포함)
   const patchMutation = useMutation({
     mutationFn: async (body: RequestPatchMyInfoDto) => patchMyInfo(body),
+
+    // ✅ onMutate: 서버 응답 전에 UI를 먼저 변경
+    onMutate: async (body) => {
+      // 진행 중인 refetch가 낙관적 업데이트를 덮어쓰지 않도록 취소
+      await queryClient.cancelQueries({ queryKey: ["myInfo"] });
+
+      // 롤백을 위해 이전 캐시 값 저장
+      const previousMyInfo = queryClient.getQueryData<ResponseMyInfoDto>(["myInfo"]);
+
+      // ✅ MyPage 캐시 즉시 업데이트
+      queryClient.setQueryData<ResponseMyInfoDto>(["myInfo"], (old) => {
+        if (!old?.data) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            name: body.name,
+            ...(body.bio !== undefined && { bio: body.bio }),
+          },
+        };
+      });
+
+      // ✅ NavBar의 name도 즉시 반영 (AuthContext state + localStorage)
+      updateName(body.name);
+
+      // context로 이전 값을 onError에 전달
+      return { previousMyInfo };
+    },
+
+    // ✅ 실패 시 롤백
+    onError: (error, body, context) => {
+      console.error("프로필 수정 실패:", error);
+
+      // MyPage 캐시 원복
+      if (context?.previousMyInfo) {
+        queryClient.setQueryData(["myInfo"], context.previousMyInfo);
+      }
+
+      // NavBar name 원복
+      const prevName = context?.previousMyInfo?.data?.name;
+      if (prevName) updateName(prevName);
+
+      alert("프로필 수정에 실패했습니다. 다시 시도해주세요.");
+    },
+
+    // ✅ 성공 시 모달 닫기
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myInfo"] });
       setIsEditOpen(false);
     },
-    onError: (error) => {
-      console.error("프로필 수정 실패:", error);
-      alert("프로필 수정에 실패했습니다. 다시 시도해주세요.");
+
+    // ✅ 성공/실패 모두 서버 데이터로 최종 동기화
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["myInfo"] });
     },
   });
 
@@ -97,7 +143,6 @@ const MyPage = () => {
     e.preventDefault();
     if (!form.name.trim()) return;
 
-    // 파일이 선택됐으면 리사이즈+압축 후 base64 변환, 아니면 undefined (서버에 변경 없음)
     const avatarBase64 = imageFile ? await compressImage(imageFile) : undefined;
 
     const body: RequestPatchMyInfoDto = {
@@ -109,8 +154,6 @@ const MyPage = () => {
     patchMutation.mutate(body);
   };
 
-  // 현재 보여줄 아바타: 새로 선택한 파일 미리보기 > 기존 서버 값 > 기본 이미지
-  // ?? 대신 || 사용 — 빈 문자열("")도 기본 이미지로 fallback
   const currentAvatar = preview || myInfo?.avatar || "/images/gora.jpeg";
 
   return (
@@ -166,17 +209,13 @@ const MyPage = () => {
                     alt="미리보기"
                     className="w-full h-full object-cover"
                   />
-                  {/* 호버 오버레이 */}
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                    <span className="text-white text-xs font-medium">
-                      변경
-                    </span>
+                    <span className="text-white text-xs font-medium">변경</span>
                   </div>
                 </div>
                 <p className="text-xs text-zinc-500">
                   사진을 클릭하면 변경할 수 있어요
                 </p>
-                {/* 숨겨진 파일 input */}
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -206,8 +245,7 @@ const MyPage = () => {
               {/* Bio — 옵션 */}
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-1">
-                  Bio{" "}
-                  <span className="text-zinc-500 font-normal">(선택)</span>
+                  Bio <span className="text-zinc-500 font-normal">(선택)</span>
                 </label>
                 <textarea
                   value={form.bio}
