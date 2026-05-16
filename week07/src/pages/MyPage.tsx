@@ -3,13 +3,36 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMyInfo, patchMyInfo } from "../apis/auth";
 import type { RequestPatchMyInfoDto } from "../types/auth";
 
-// WriteModal 과 동일한 방식 — File → base64 변환 헬퍼
-const fileToBase64 = (file: File): Promise<string> => {
+/**
+ * canvas로 이미지를 리사이즈 + 압축한 뒤 base64로 변환합니다.
+ * 원본 파일을 그대로 base64로 바꾸면 수 MB가 되어 서버 body 제한(1MB)을 초과합니다.
+ * 최대 400×400, JPEG 품질 0.75로 압축하면 대부분 100KB 이하가 됩니다.
+ */
+const compressImage = (file: File, maxSize = 400, quality = 0.75): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      // 비율 유지하며 maxSize 이내로 축소
+      let { width, height } = img;
+      if (width > height) {
+        if (width > maxSize) { height = Math.round((height * maxSize) / width); width = maxSize; }
+      } else {
+        if (height > maxSize) { width = Math.round((width * maxSize) / height); height = maxSize; }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+
+      URL.revokeObjectURL(objectUrl);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+
+    img.onerror = reject;
+    img.src = objectUrl;
   });
 };
 
@@ -74,8 +97,8 @@ const MyPage = () => {
     e.preventDefault();
     if (!form.name.trim()) return;
 
-    // 파일이 선택됐으면 base64 변환, 아니면 undefined (서버에 변경 없음)
-    const avatarBase64 = imageFile ? await fileToBase64(imageFile) : undefined;
+    // 파일이 선택됐으면 리사이즈+압축 후 base64 변환, 아니면 undefined (서버에 변경 없음)
+    const avatarBase64 = imageFile ? await compressImage(imageFile) : undefined;
 
     const body: RequestPatchMyInfoDto = {
       name: form.name.trim(),
