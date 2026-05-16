@@ -68,10 +68,10 @@ export type Comment = {
   id: number;
   content: string;
   lpId: number;
-  userId: number;
+  authorId: number; //
   createdAt: string;
   updatedAt: string;
-  user: CommentAuthor;
+  author: CommentAuthor; //
 };
 
 // ────────────────────────────────────────────
@@ -83,6 +83,28 @@ export type CursorPage<T> = {
   nextCursor: number | null;
   hasNext: boolean;
 };
+
+export interface CommentDetail {
+  id: number;
+  content: string;
+  lpId: number;
+  authorId: number;
+  createdAt: string;
+  updatedAt: string;
+  author: {
+    id: number;
+    name: string;
+    email: string;
+    bio: string | null;
+    avatar: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+export interface PostCommentResponse {
+  data: CommentDetail;
+  message?: string;
+}
 
 // ────────────────────────────────────────────
 // API 응답 래퍼 타입

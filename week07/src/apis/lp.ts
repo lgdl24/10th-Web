@@ -6,6 +6,7 @@ import type {
   SortOrder,
   Lp,
 } from "../types/lp";
+import type { PostCommentResponse } from "../types/lp";
 import { axiosInstance } from "./axios";
 
 export const getLps = async (
@@ -43,6 +44,35 @@ export const getComments = async (
   });
   return data;
 };
+export const postComment = async (
+  lpId: number,
+  content: string,
+): Promise<PostCommentResponse> => {
+  const { data } = await axiosInstance.post(`/v1/lps/${lpId}/comments`, {
+    content,
+  });
+  return data;
+};
+
+export const patchComment = async (
+  lpId: number,
+  commentId: number,
+  content: string,
+): Promise<PostCommentResponse> => {
+  const { data } = await axiosInstance.patch(
+    `/v1/lps/${lpId}/comments/${commentId}`,
+    { content },
+  );
+  return data;
+};
+
+export const deleteComment = async (
+  lpId: number,
+  commentId: number,
+): Promise<void> => {
+  await axiosInstance.delete(`/v1/lps/${lpId}/comments/${commentId}`);
+};
+
 /*
 
 
@@ -78,4 +108,26 @@ export const postLp = async (
   });
 
   return response.data.data;
+};
+
+export const patchLp = async (
+  lpId: number,
+  title: string,
+  content: string,
+  tags: string[],
+  thumbnail?: string,
+): Promise<Lp> => {
+  const response = await axiosInstance.patch<LpResponse>(`/v1/lps/${lpId}`, {
+    title,
+    content,
+    thumbnail,
+    tags,
+    published: true,
+  });
+
+  return response.data.data;
+};
+
+export const deleteLp = async (lpId: number): Promise<void> => {
+  await axiosInstance.delete(`/v1/lps/${lpId}`);
 };

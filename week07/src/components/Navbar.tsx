@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "../context/AuthContext";
 
 const BurgerIcon = () => (
@@ -27,14 +28,23 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   const { accessToken, name, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
-  };
+  // ── 로그아웃 useMutation
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      navigate("/");
+    },
+    onError: () => {
+      alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+    },
+  });
 
   return (
     <header className="flex items-center h-16 px-4 bg-zinc-900 shrink-0 border-b border-zinc-800">
-      <button onClick={onMenuClick} className="mr-3 text-zinc-300 hover:text-white transition-colors">
+      <button
+        onClick={onMenuClick}
+        className="mr-3 text-zinc-300 hover:text-white transition-colors"
+      >
         <BurgerIcon />
       </button>
 
@@ -64,10 +74,11 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               {name}님 반갑습니다.
             </span>
             <button
-              className="bg-blue-600 text-white px-3 py-2 rounded-lg font-medium hover:bg-blue-500 transition"
-              onClick={handleLogout}
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="bg-blue-600 text-white px-3 py-2 rounded-lg font-medium hover:bg-blue-500 transition disabled:bg-zinc-700 disabled:text-zinc-500"
             >
-              로그아웃
+              {logoutMutation.isPending ? "로그아웃 중..." : "로그아웃"}
             </button>
           </>
         )}

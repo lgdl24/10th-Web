@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
 import useForm from "../hooks/useForm";
 import { validateSignin, type UserSigininInformation } from "../utils/validate";
 import { useAuth } from "../context/AuthContext";
@@ -29,15 +30,24 @@ const LoginPage = () => {
       validate: validateSignin,
     });
 
-  const handleSubmit = async () => {
-    const success = await login(values);
-
-    if (success) {
-      const state = location.state as LocationState;
-      navigate(state?.from ?? "/", { replace: true });
-    } else {
+  // ── 로그인 useMutation
+  const loginMutation = useMutation({
+    mutationFn: (vals: UserSigininInformation) => login(vals),
+    onSuccess: (success) => {
+      if (success) {
+        const state = location.state as LocationState;
+        navigate(state?.from ?? "/", { replace: true });
+      } else {
+        alert("로그인에 실패했습니다. 다시 시도해주세요.");
+      }
+    },
+    onError: () => {
       alert("로그인에 실패했습니다. 다시 시도해주세요.");
-    }
+    },
+  });
+
+  const handleSubmit = () => {
+    loginMutation.mutate(values);
   };
 
   const handleGoogleLogin = () => {
@@ -47,7 +57,8 @@ const LoginPage = () => {
 
   const isDisabled =
     Object.values(error || {}).some((e: string) => e.length > 0) ||
-    Object.values(values).some((v) => v === "");
+    Object.values(values).some((v) => v === "") ||
+    loginMutation.isPending;
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4">
@@ -87,7 +98,7 @@ const LoginPage = () => {
           disabled={isDisabled}
           className="w-full bg-blue-600 text-white py-3 rounded-md text-lg font-medium hover:bg-blue-500 transition-colors cursor-pointer disabled:bg-zinc-700 disabled:text-zinc-500"
         >
-          로그인
+          {loginMutation.isPending ? "로그인 중..." : "로그인"}
         </button>
 
         {/* Google 버튼은 흰 배경 유지 (브랜드 가이드라인) */}

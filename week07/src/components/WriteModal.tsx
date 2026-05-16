@@ -1,23 +1,47 @@
 import { useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query"; // ✅ React Query 임포트 추가
-import { postLp } from "../apis/lp";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { patchLp, postLp } from "../apis/lp";
+
+// 파일을 Base64 텍스트로 변환해주는 헬퍼 함수
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+interface InitialValues {
+  title: string;
+  content: string;
+  tags: string[];
+  thumbnail?: string;
+}
 
 type WriteModalProps = {
   onClose: () => void;
+  /** 수정 모드일 때 LP id */
+  lpId?: number;
+  /** 수정 모드일 때 기존 값 */
+  initialValues?: InitialValues;
 };
 
-const WriteModal = ({ onClose }: WriteModalProps) => {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+const WriteModal = ({ onClose, lpId, initialValues }: WriteModalProps) => {
+  const isEditMode = lpId !== undefined && initialValues !== undefined;
+
+  const [title, setTitle] = useState(initialValues?.title ?? "");
+  const [content, setContent] = useState(initialValues?.content ?? "");
+  const [tags, setTags] = useState<string[]>(initialValues?.tags ?? []);
   const [tagInput, setTagInput] = useState("");
 
-  const [preview, setPreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | undefined>();
+  // 수정 모드: 기존 썸네일을 초기 미리보기로 사용
+  const [preview, setPreview] = useState<string | null>(
+    initialValues?.thumbnail ?? null,
+  );
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // QueryClient 인스턴스 가져오기
   const queryClient = useQueryClient();
 
   const handleTag = () => {
@@ -26,63 +50,80 @@ const WriteModal = ({ onClose }: WriteModalProps) => {
     setTagInput("");
   };
 
-  const handleClickImage = () => {
-    fileInputRef.current?.click();
-  };
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setImageFile(file);
-    const imageUrl = URL.createObjectURL(file);
-    setPreview(imageUrl);
+    setPreview(URL.createObjectURL(file));
   };
 
   const handleDeleteTag = (targetTag: string) => {
     setTags((prev) => prev.filter((tag) => tag !== targetTag));
   };
 
-  // useMutation 
+  // ── 등록 / 수정 useMutation
   const { mutate, isPending } = useMutation({
-    // 주의: preview는 'blob:http://...' 형태의 임시 URL입니다.
-    // 백엔드에 실제 파일을 보내야 한다면 preview 대신 imageFile을 보내도록 api를 수정해야 할 수 있습니다.
-    mutationFn: () => postLp(title, content, tags, preview ?? undefined),
+    mutationFn: async () => {
+      // 새 파일이 선택됐으면 base64 변환, 아니면 기존 thumbnail 그대로
+      let thumbnail: string | undefined = initialValues?.thumbnail;
+      if (imageFile) {
+        thumbnail = await fileToBase64(imageFile);
+      }
 
+      if (isEditMode) {
+        return patchLp(lpId, title, content, tags, thumbnail);
+      } else {
+        return postLp(title, content, tags, thumbnail);
+      }
+    },
     onSuccess: () => {
-      //1. 성공 시 메인 페이지의 LP 목록 새로고침 (queryKey 'lps'는 실제 사용하는 키로 맞춰주세요)
-      queryClient.invalidateQueries({ queryKey: ["lps"] });
-
-      //2. 모달 닫기
+      if (isEditMode) {
+        // 수정: 해당 LP 상세 캐시 무효화
+        queryClient.invalidateQueries({ queryKey: ["lp", lpId] });
+      } else {
+        // 등록: 목록 캐시 무효화
+        queryClient.invalidateQueries({ queryKey: ["lps"] });
+      }
       onClose();
     },
     onError: (error: any) => {
-      console.log(error.response?.data);
-      alert("LP 등록 중 오류가 발생했습니다.");
+      console.error("서버 에러 상세:", error.response?.data);
+      alert(isEditMode ? "LP 수정 중 오류가 발생했습니다." : "LP 등록 중 오류가 발생했습니다.");
     },
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // 직접 API를 호출하지 않고 mutate 함수 실행
+    // 등록 모드에서만 이미지 필수, 수정 모드에서는 기존 이미지 유지 가능
+    if (!isEditMode && !imageFile) return alert("이미지를 선택해주세요.");
+    if (!title.trim()) return alert("제목을 입력해주세요.");
+    if (!content.trim()) return alert("내용을 입력해주세요.");
     mutate();
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="w-[90%] max-w-md bg-zinc-900 border border-zinc-700 rounded-2xl p-6">
+        <h2 className="text-white font-semibold text-lg mb-4">
+          {isEditMode ? "LP 수정" : "LP 등록"}
+        </h2>
         <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
           {/* 이미지 업로드 영역 */}
           <div
-            onClick={handleClickImage}
-            className="w-full aspect-square bg-zinc-800 rounded-lg overflow-hidden cursor-pointer flex items-center justify-center text-zinc-400 hover:bg-zinc-700 transition"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full aspect-square bg-zinc-800 rounded-lg overflow-hidden cursor-pointer flex items-center justify-center text-zinc-400 hover:bg-zinc-700 transition relative group"
           >
             {preview ? (
-              <img
-                src={preview}
-                alt="preview"
-                className="w-full h-full object-cover"
-              />
+              <>
+                <img
+                  src={preview}
+                  alt="preview"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                  <span className="text-white text-sm">이미지 변경</span>
+                </div>
+              </>
             ) : (
               <span>이미지 선택</span>
             )}
@@ -162,18 +203,17 @@ const WriteModal = ({ onClose }: WriteModalProps) => {
             <button
               type="button"
               onClick={onClose}
-              disabled={isPending} // ✅ 로딩 중 비활성화
+              disabled={isPending}
               className="px-4 py-2 rounded-lg bg-zinc-700 text-white font-medium hover:bg-zinc-500 transition disabled:opacity-50"
             >
               취소
             </button>
-
             <button
               type="submit"
-              disabled={isPending} // ✅ 로딩 중 비활성화
+              disabled={isPending}
               className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-500 transition disabled:opacity-50"
             >
-              {isPending ? "저장 중..." : "저장"} {/* ✅ 로딩 텍스트 피드백 */}
+              {isPending ? "저장 중..." : isEditMode ? "수정" : "저장"}
             </button>
           </div>
         </form>
